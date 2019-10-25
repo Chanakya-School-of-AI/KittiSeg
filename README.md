@@ -47,6 +47,9 @@ If you forget the second step you might end up with an inconstant repository sta
 
 Run: `python demo.py --input_image data/demo/demo.png` to obtain a prediction using [demo.png](data//demo/demo.png) as input.
 
+Note - Inorder to run demo make sure that you modify line number `33` in this file `incl/tensorflow_fcn/fcn8_vgg.py` as follows.
+`self.data_dict = np.load(vgg16_npy_path, encoding='latin1', allow_pickle=True).item()`
+
 Run: `python evaluate.py` to evaluate a trained model. 
 
 Run: `python train.py --hypes hypes/KittiSeg.json` to train a model using Kitti Data.
