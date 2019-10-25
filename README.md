@@ -1,5 +1,7 @@
 # KittiSeg
 
+ ---- This is a fork, we are trying to make it compatible with tensorflow 1.14 and opencv, work in progress ----
+
 KittiSeg performs segmentation of roads by utilizing an FCN based model. The model achieved [first place](http://www.cvlibs.net/datasets/kitti/eval_road_detail.php?result=ca96b8137feb7a636f3d774c408b1243d8a6e0df) on the Kitti Road Detection Benchmark at submission time. Check out our [paper](https://arxiv.org/abs/1612.07695) for a detailed model description.
 
 <img src="data/examples/um_road_000032.png" width="288"> <img src="data/examples/uu_road_000002.png" width="288"> <img src="data/examples/uu_road_000049.png" width="288"> 
@@ -13,15 +15,16 @@ The repository contains code for training, evaluating and visualizing semantic s
 
 ## Requirements
 
-The code requires [Tensorflow 1.0](https://www.tensorflow.org/install/), python 2.7 as well as the following python libraries: 
+The code requires [Tensorflow 1.0](https://www.tensorflow.org/install/) (this fork has been tested with tensorflow 1.14 and it is working), python 3 as well as the following python libraries: 
 
 * matplotlib
 * numpy
 * Pillow
 * scipy
 * commentjson
+* opencv
 
-Those modules can be installed using: `pip install numpy scipy pillow matplotlib commentjson` or `pip install -r requirements.txt`.
+Those modules can be installed using: `pip install numpy scipy pillow matplotlib commentjson opencv-python` or `pip install -r requirements.txt`.
 
 
 ## Setup
