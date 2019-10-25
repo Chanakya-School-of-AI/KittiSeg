@@ -19,6 +19,9 @@ Copyright (c) 2017 Marvin Teichmann
 
 Details: https://github.com/MarvinTeichmann/KittiSeg/blob/master/LICENSE
 """
+
+# Tensorflow 1.14 compatibility - Vipul Vaibhaw
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -27,6 +30,10 @@ import json
 import logging
 import os
 import sys
+
+# Vipul - Importing libraries because scipy.misc image are removed!
+import cv2 
+from PIL import Image
 
 import collections
 
@@ -39,7 +46,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
 # https://github.com/tensorflow/tensorflow/issues/2034#issuecomment-220820070
 import numpy as np
 import scipy as scp
-import scipy.misc
+
 import tensorflow as tf
 
 
@@ -162,13 +169,16 @@ def main(_):
     logging.info("Starting inference using {} as input".format(input_image))
 
     # Load and resize input image
-    image = scp.misc.imread(input_image)
+    image = cv2.imread(input_image)
+
+    image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
+
     if hypes['jitter']['reseize_image']:
         # Resize input only, if specified in hypes
         image_height = hypes['jitter']['image_height']
         image_width = hypes['jitter']['image_width']
-        image = scp.misc.imresize(image, size=(image_height, image_width),
-                                  interp='cubic')
+        image = cv2.resize(image, (image_width, image_height),
+                                  interpolation='cubic')
 
     # Run KittiSeg model on image
     feed = {image_pl: image}
@@ -176,8 +186,8 @@ def main(_):
     output = sess.run([softmax], feed_dict=feed)
 
     # Reshape output from flat vector to 2D Image
-    shape = image.shape
-    output_image = output[0][:, 1].reshape(shape[0], shape[1])
+    height, width, _  = image.shape
+    output_image = output[0][:, 1].reshape(height, width)
 
     # Plot confidences as red-blue overlay
     rb_image = seg.make_overlay(image, output_image)
@@ -188,8 +198,29 @@ def main(_):
     street_prediction = output_image > threshold
 
     # Plot the hard prediction as green overlay
-    green_image = tv_utils.fast_overlay(image, street_prediction)
+    # green_image = tv_utils.fast_overlay(image, street_prediction)
+    # The above logic is obsolete code. Following code is cv2 logic of above code.
 
+    # Background img
+    green_image_background = cv2.cvtColor(image, cv2.COLOR_RGB2RGBA)
+    b, g, r, alpha = cv2.split(green_image_background)
+    green_image_background[:,:, 0] = image[:,:,0]
+    green_image_background[:,:, 1] = image[:,:,1]
+    green_image_background[:,:, 2] = image[:,:,2]
+    green_image_background[:,:, 3] = alpha[:,:]
+
+    # forground mask of road
+    color = [0, 255, 0, 127]
+    color = np.array(color).reshape(1, 4)
+    shape = image.shape
+    segmentation = street_prediction.reshape(shape[0], shape[1], 1)
+
+    output = np.dot(segmentation, color).astype('uint8') 
+
+    # Combine both background and foreground
+    green_image = cv2.addWeighted(green_image_background,1,output,0.4,0)
+    green_image = cv2.cvtColor(green_image,cv2.COLOR_RGBA2BGR)
+    
     # Save output images to disk.
     if FLAGS.output_image is None:
         output_base_name = input_image
@@ -200,9 +231,11 @@ def main(_):
     rb_image_name = output_base_name.split('.')[0] + '_rb.png'
     green_image_name = output_base_name.split('.')[0] + '_green.png'
 
-    scp.misc.imsave(raw_image_name, output_image)
-    scp.misc.imsave(rb_image_name, rb_image)
-    scp.misc.imsave(green_image_name, green_image)
+    cv2.imwrite(raw_image_name, output_image)
+    cv2.imwrite(rb_image_name, rb_image)
+    cv2.imwrite(green_image_name, green_image)
+    cv2.imshow(green_image_name, green_image)
+    cv2.waitKey(5000)
 
     logging.info("")
     logging.info("Raw output image has been saved to: {}".format(
